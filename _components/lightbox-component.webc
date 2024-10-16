@@ -1,68 +1,84 @@
-<div class="gallery">
-
-	<div webc:for="image of images" >
-		<a :href="image.url" class="lightbox">
-			<img :src="image.thumb">
-		</a>
-	</div>
-
+<div id="lightbox-template">
+  <style>
+    .gallery {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    .gallery a {
+      flex: 0 0 auto;
+      width: 300px; /* 固定宽度 */
+      height: 300px; /* 固定高度 */
+    }
+    .gallery img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* 保持图片比例并填满容器 */
+    }
+  </style>
+  <div class="gallery" id="lightbox-gallery">
+    <a webc:for="image of images" :href="image.url" class="lightbox">
+      <img :src="image.thumb" :alt="image.title || ''">
+    </a>
+  </div>
 </div>
 
-<style webc:scoped>
-.gallery {
-	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	gap: 10px;
-	justify-content: flex-start;
-	align-items: center;
-}
-.gallery a {
-	flex: 0 0 auto;
-	width: 300px; /* 固定宽度 */
-	height: 300px; /* 固定高度 */
-}
-.gallery img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover; /* 保持图片比例并填满容器 */
-}
-</style>
+
 
 <script>
-  window.customElements.define("lightbox-component", class extends HTMLElement {
-    connectedCallback() {
-      this.loadAssets().then(() => {
-        this.initParvus();
-      });
-    }
+class LightboxComponent extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
 
-    loadAssets() {
-      return new Promise((resolve) => {
-        if (!document.querySelector('link[href="/assets/parvus.min.css"]')) {
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = '/assets/parvus.min.css';
-          document.head.appendChild(link);
-        }
+  connectedCallback() {
+    const template = document.getElementById('lightbox-template');
+    this.shadowRoot.appendChild(template);
 
-        if (!document.querySelector('script[src="/assets/parvus.min.js"]')) {
-          const script = document.createElement('script');
-          script.src = '/assets/parvus.min.js';
-          script.onload = resolve;
-          document.body.appendChild(script);
-        } else {
-          resolve();
-        }
-      });
-    }
+    this.loadAssets().then(() => {
+      this.initParvus();
+    });
+  }
 
-    initParvus() {
-      if (typeof Parvus !== 'undefined') {
+  loadAssets() {
+    return new Promise((resolve) => {
+      if (!document.querySelector('link[href="/assets/parvus.min.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/assets/parvus.min.css';
+        document.head.appendChild(link);
+      }
+
+      if (!document.querySelector('script[src="/assets/parvus.min.js"]')) {
+        const script = document.createElement('script');
+        script.src = '/assets/parvus.min.js';
+        script.onload = resolve;
+        document.body.appendChild(script);
+      } else {
+        resolve();
+      }
+    });
+  }
+
+  initParvus() {
+    if (typeof Parvus !== 'undefined') {
+      const gallery = this.shadowRoot.querySelector('#lightbox-gallery');
+      if (gallery) {
+        console.log(gallery, "Glallery ready in Shadow Root Dom");
         new Parvus();
       } else {
-        console.error('Parvus is not defined. Make sure the script is loaded correctly.');
+        console.error('Gallery element not found in Shadow DOM');
       }
+    } else {
+      console.error('Parvus is not defined. Make sure the script is loaded correctly.');
     }
-  });
+  }
+}
+
+customElements.define('lightbox-component', LightboxComponent);
 </script>
+
